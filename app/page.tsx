@@ -395,39 +395,51 @@ export default function AgentWorkbench() {
               <div
                 key={lead.id}
                 className={cn(
-                  "px-4 py-3 cursor-pointer transition-colors border-b border-gray-100 hover:bg-gray-50",
+                  "px-4 py-3.5 cursor-pointer transition-colors border-b border-gray-100 hover:bg-gray-50",
                   selectedLead.id === lead.id && "bg-blue-50 border-l-4 border-l-blue-500",
                   lead.riskLevel === 'high' && "bg-red-50/50"
                 )}
                 onClick={() => handleLeadClick(lead)}
               >
-                {/* Row Layout: Left (Name+Badge) | Middle (Tags+Insight) | Right (Status+Action) */}
-                <div className="flex items-center gap-3">
-                  {/* Left: Name + Score Badge */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-sm font-medium text-gray-900">{lead.name}</span>
-                    <Badge className={cn("text-[10px] px-1.5 py-0", getIntentionColor(lead.intentionScore))}>
-                      {lead.intentionScore}分
-                    </Badge>
-                  </div>
-                  
-                  {/* Middle: Car Model Tags + Key Insight */}
-                  <div className="flex-1 min-w-0 flex items-center gap-2">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <span className="truncate">{lead.targetModel}</span>
-                      <span className="text-gray-300">vs</span>
-                      <span className="truncate">{lead.competitorModel}</span>
+                {/* Multi-row Layout for Rich Information */}
+                <div className="space-y-2">
+                  {/* Row 1: Name + Badge + Time */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-gray-900">{lead.name}</span>
+                      <Badge className={cn("text-[10px] px-1.5 py-0.5", getIntentionColor(lead.intentionScore))}>
+                        {lead.intentionScore}分
+                      </Badge>
                     </div>
-                    <span className="text-xs text-gray-400 truncate">· {lead.keyIssue}</span>
-                  </div>
-                  
-                  {/* Right: Status/Time + Action Icon */}
-                  <div className="flex items-center gap-2 shrink-0">
                     <div className="flex items-center gap-1 text-xs text-gray-400">
                       <Clock className="w-3 h-3" />
                       <span>{lead.lastContact}</span>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-gray-300" />
+                  </div>
+                  
+                  {/* Row 2: Car Models Comparison */}
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <span className="text-gray-700 font-medium">{lead.targetModel}</span>
+                    <span className="text-gray-300">vs</span>
+                    <span className="text-gray-500">{lead.competitorModel}</span>
+                  </div>
+                  
+                  {/* Row 3: Key Issue + Source + Test Drives */}
+                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <MessageSquare className="w-3 h-3" />
+                      {lead.keyIssue}
+                    </span>
+                    <span>·</span>
+                    <span>试驾{lead.testDrives}次</span>
+                    <span>·</span>
+                    <span>{lead.source}</span>
+                    {lead.cost > 0 && (
+                      <>
+                        <span>·</span>
+                        <span className="text-orange-600">¥{lead.cost}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -495,34 +507,34 @@ export default function AgentWorkbench() {
                       </div>
                     )}
                     
-                    {/* AI Message - 4-Part Structure */}
+                    {/* AI Message - Natural Article Style */}
                     {message.role === 'assistant' && (
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         {/* Part A: Insight & Solution (Content Layer) */}
                         <div className="prose prose-sm max-w-none">
                           <p className="text-[15px] leading-relaxed text-gray-700">
                             {message.content}
                           </p>
                           
-                          {/* Code Block for Script/Content */}
+                          {/* Code Block for Script/Content - Plain text style */}
                           {message.codeBlock && (
-                            <div className="mt-3 bg-gray-50 border border-gray-200 rounded-xl p-4 font-mono text-[13px] leading-relaxed text-gray-800 whitespace-pre-wrap">
+                            <div className="mt-4 pl-4 border-l-2 border-gray-200 text-[14px] leading-relaxed text-gray-800 whitespace-pre-wrap">
                               {message.codeBlock}
                             </div>
                           )}
                         </div>
                         
-                        {/* Part B: Proactive Text Trigger (Red Box Style) */}
+                        {/* Part B: Proactive Text Trigger - Plain text style */}
                         {message.suggestion && (
-                          <div className="bg-blue-50/50 border border-blue-100 rounded-lg px-4 py-3 flex items-start gap-2">
-                            <Sparkles className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-                            <p className="text-sm text-gray-700 leading-relaxed">
+                          <div className="flex items-start gap-2 text-gray-600 italic">
+                            <Sparkles className="w-4 h-4 text-blue-400 shrink-0 mt-1" />
+                            <p className="text-[14px] leading-relaxed">
                               {message.suggestion}
                             </p>
                           </div>
                         )}
                         
-                        {/* Part C: Feedback Action Bar (Blue Box Style - RLHF) */}
+                        {/* Part C: Feedback Action Bar (RLHF) */}
                         <div className="flex items-center gap-2 pt-1">
                           <button className="p-1.5 hover:bg-gray-100 rounded-md transition-colors group" title="复制">
                             <Copy className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
@@ -541,7 +553,7 @@ export default function AgentWorkbench() {
                           </button>
                         </div>
                         
-                        {/* Part D: Suggested Action Chips (Green Box Style) */}
+                        {/* Part D: Suggested Action Chips */}
                         {message.actionChips && message.actionChips.length > 0 && (
                           <div className="flex flex-wrap gap-2 pt-1">
                             {message.actionChips.map((chip, chipIndex) => (
