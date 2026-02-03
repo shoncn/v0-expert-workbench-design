@@ -74,8 +74,8 @@ const initialLeads: Lead[] = [
     source: '线下到店',
     cost: 0,
     sourceType: '自主获取',
-    targetModel: '智己L7',
-    competitorModel: '蔚来ET7',
+    targetModel: '理想L7',
+    competitorModel: '蔚来ES6',
     keyIssue: '催促提车',
     status: 'active',
     riskLevel: 'low',
@@ -90,8 +90,8 @@ const initialLeads: Lead[] = [
     source: '老带新',
     cost: 0,
     sourceType: '自主获取',
-    targetModel: 'LS6',
-    competitorModel: '特斯拉 Model Y',
+    targetModel: '理想L6',
+    competitorModel: '问界M7',
     keyIssue: '纠结内饰颜色',
     status: 'active',
     riskLevel: 'low',
@@ -107,8 +107,8 @@ const initialLeads: Lead[] = [
     source: '线下到店',
     cost: 0,
     sourceType: '自主获取',
-    targetModel: 'LS6',
-    competitorModel: '小鹏G6',
+    targetModel: '理想L6',
+    competitorModel: '问界M5',
     keyIssue: '对比竞品续航',
     status: 'active',
     riskLevel: 'low',
@@ -123,8 +123,8 @@ const initialLeads: Lead[] = [
     source: '线上线索',
     cost: 48,
     sourceType: '购买',
-    targetModel: 'ES6',
-    competitorModel: '理想L6',
+    targetModel: '理想L9',
+    competitorModel: '宝马X5',
     keyIssue: '询问金融方案',
     status: 'active',
     riskLevel: 'low',
@@ -140,8 +140,8 @@ const initialLeads: Lead[] = [
     source: '老客户',
     cost: 0,
     sourceType: '自主获取',
-    targetModel: 'ET7',
-    competitorModel: '宝马5系',
+    targetModel: '理想MEGA',
+    competitorModel: '腾势D9',
     keyIssue: '等待交付',
     status: 'locked',
     riskLevel: 'low',
@@ -159,7 +159,7 @@ const initialLeads: Lead[] = [
     source: '线下到店',
     cost: 0,
     sourceType: '自主获取',
-    targetModel: 'ES8',
+    targetModel: '理想L8',
     competitorModel: '奥迪Q7',
     keyIssue: '待验车',
     status: 'locked',
@@ -179,8 +179,8 @@ const initialLeads: Lead[] = [
     source: '抖音直播',
     cost: 15,
     sourceType: '购买',
-    targetModel: 'LS6',
-    competitorModel: '比亚迪海豹',
+    targetModel: '理想L6',
+    competitorModel: '比亚迪唐DM',
     keyIssue: '仅留资',
     status: 'active',
     riskLevel: 'high',
@@ -195,8 +195,8 @@ const initialLeads: Lead[] = [
     source: '老客户推荐',
     cost: 0,
     sourceType: '自主获取',
-    targetModel: 'ES6',
-    competitorModel: '小鹏P7',
+    targetModel: '理想L7',
+    competitorModel: '蔚来ES7',
     keyIssue: '战败激活',
     status: 'active',
     riskLevel: 'high',
@@ -510,8 +510,8 @@ export default function AgentWorkbench() {
           <div className="bg-white border-b border-gray-200 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-lg font-semibold text-gray-900">资源运营工作台</h1>
-                <p className="text-xs text-gray-500 mt-0.5">商机管理 · Agent驱动</p>
+                <h1 className="text-lg font-semibold text-gray-900">Sales Agent</h1>
+                <p className="text-xs text-gray-500 mt-0.5">商机管理</p>
               </div>
               <Button 
                 variant="ghost" 
@@ -665,25 +665,24 @@ export default function AgentWorkbench() {
           {/* Minimalist Header - Fixed */}
           <div className="bg-white/80 backdrop-blur-md border-b border-gray-100 p-4 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-sm font-medium text-gray-700">智能销售专家</span>
-              <span className="text-xs text-gray-400">Gemini驱动</span>
-            </div>
-            <div className="flex items-center gap-2">
               {pendingTasks.length > 0 && (
                 <Badge variant="outline" className="border-orange-300 bg-orange-50 text-orange-700 text-xs">
                   {pendingTasks.length}
                 </Badge>
               )}
+            </div>
+            <div className="flex items-center gap-2">
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-7 w-7 text-gray-500 hover:text-gray-700" 
-                onClick={() => setShowSkillConfig(!showSkillConfig)}
+                className="h-8 w-8 text-gray-500 hover:text-gray-700" 
+                onClick={() => {
+                  setMessages([])
+                  setInputMessage('')
+                }}
+                title="开启新话题"
               >
-                <Settings className="w-4 h-4" />
+                <Edit3 className="w-4 h-4" />
               </Button>
             </div>
           </div>
