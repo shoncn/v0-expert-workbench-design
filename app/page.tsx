@@ -173,7 +173,7 @@ export default function AgentWorkbench() {
   const [sortBy, setSortBy] = useState<'intention' | 'time' | 'price'>('intention')
   const [pendingTasks, setPendingTasks] = useState(0)
 
-  // 初始化 - Daily Kick-off Card + User Response
+  // 初始化 - Scenario 2: Market Agent Lead Shortage
   useEffect(() => {
     const kickoffMessage: Message = {
       role: 'assistant',
@@ -191,26 +191,61 @@ export default function AgentWorkbench() {
     
     const strategyMessage: Message = {
       role: 'assistant',
-      content: '正在为您生成获客方案...',
+      content: '当前商机资源不足，为您生成获客策略',
       timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-      codeBlock: `【获客方案 - 理想L9目标客群】
+      codeBlock: `策略 A：主动营销（低成本）
 
-渠道策略：
-• 线上：抖音/小红书投放（预算¥5000，预计15条线索）
-• 线下：商圈试驾活动（周末，目标20组家庭）
-• 转介绍：老客户推荐奖励（每成交1台奖励¥2000）
+素材生成：L9 促销倒计时 2 天素材
+• 文案："马年购新车，智享全家福。理想L9新春限时优惠最后2天！"
+• 海报模板：[马年L9权益] 新年购新车，限时立减2万元
+• 发布渠道：朋友圈/企微/抖音
 
-话术模板：
-"理想L9，家庭出行的最佳选择。6座布局，二排独立座椅，让每次旅行都舒适自在。本月购车还可享受..."
+策略 B：线索采买（高效率）
 
-执行计划：
-1. 本周三前完成素材制作
-2. 周四启动线上投放
-3. 周六组织线下活动`,
-      actionChips: ['开始执行', '调整方案', '查看预算']
+建议补充 L6/L9 高意向线索 10 条
+• 单价：¥48/条
+• 预算：¥480
+• 预计转化率：30%
+• 预估成交：3台`,
+      actionChips: ['一键发布朋友圈', '直接提交采买', '查看详细方案']
     }
     
-    setMessages([kickoffMessage, userResponse, strategyMessage])
+    const userSelection: Message = {
+      role: 'user',
+      content: '直接提交采买',
+      timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+    }
+    
+    const confirmationMessage: Message = {
+      role: 'assistant',
+      content: '✅ 已收到 1 条采买下发 L6 新商机',
+      timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      suggestion: '新线索"刘先生"已添加到资源列表，建议 1 小时内完成首次跟进',
+      actionChips: ['生成跟进话术', '查看客户详情', '设置提醒']
+    }
+    
+    setMessages([kickoffMessage, userResponse, strategyMessage, userSelection, confirmationMessage])
+    
+    // Simulate adding new lead to the list after 1 second
+    setTimeout(() => {
+      const newLead: Lead = {
+        id: 99,
+        name: '刘先生',
+        intentionScore: 7,
+        testDrives: 0,
+        followUpDays: 0,
+        source: '线索采买',
+        cost: 48,
+        sourceType: '购买',
+        targetModel: '理想L6',
+        competitorModel: '小鹏G6',
+        keyIssue: '新线索待跟进',
+        status: 'active',
+        riskLevel: 'low',
+        lastContact: '刚刚'
+      }
+      setLeads(prev => [newLead, ...prev])
+    }, 1000)
   }, [])
 
   // 处理用户输入
@@ -449,6 +484,11 @@ export default function AgentWorkbench() {
                         <Badge variant="outline" className="border-green-300 bg-green-50 text-green-700 text-[10px] px-1.5 py-0">
                           {lead.sourceType}
                         </Badge>
+                        {lead.id === 99 && (
+                          <Badge className="bg-red-500 text-white text-[10px] px-1.5 py-0 animate-pulse">
+                            NEW
+                          </Badge>
+                        )}
                       </div>
                       
                       {/* Layer 2: Sales Info (Middle & Prominent) */}
