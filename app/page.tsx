@@ -39,6 +39,10 @@ type Lead = {
   status: 'active' | 'locked' | 'completed'
   riskLevel?: 'high' | 'medium' | 'low'
   lastContact?: string
+  // Delivery phase fields
+  financeStatus?: '贷款' | '全款'
+  deliveryDays?: number
+  deliverySpecialist?: string
 }
 
 // 消息类型 - Generative UI结构
@@ -134,7 +138,10 @@ const initialLeads: Lead[] = [
     keyIssue: '等待交付',
     status: 'locked',
     riskLevel: 'low',
-    lastContact: '1天前'
+    lastContact: '1天前',
+    financeStatus: '贷款',
+    deliveryDays: 3,
+    deliverySpecialist: '刘师傅'
   },
   {
     id: 6,
@@ -389,58 +396,75 @@ export default function AgentWorkbench() {
             </div>
           </div>
 
-          {/* High-Density List - Feishu/Lark Style */}
+          {/* High-Density List - 3-Layer Vertical Stack */}
           <div className="flex-1 overflow-y-auto">
             {sortedLeads.filter(lead => lead.status !== 'completed').map((lead, index) => (
               <div
                 key={lead.id}
                 className={cn(
-                  "px-4 py-3.5 cursor-pointer transition-colors border-b border-gray-100 hover:bg-gray-50",
+                  "px-4 py-4 cursor-pointer transition-colors border-b border-gray-100 hover:bg-gray-50",
                   selectedLead.id === lead.id && "bg-blue-50 border-l-4 border-l-blue-500",
                   lead.riskLevel === 'high' && "bg-red-50/50"
                 )}
                 onClick={() => handleLeadClick(lead)}
               >
-                {/* Multi-row Layout for Rich Information */}
-                <div className="space-y-2">
-                  {/* Row 1: Name + Badge + Time */}
-                  <div className="flex items-center justify-between">
+                {/* 3-Layer Vertical Stack Structure */}
+                <div className="space-y-2.5">
+                  
+                  {/* Layer 1: Market Info (Top) */}
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <span>{lead.source}</span>
+                    <span>·</span>
+                    <span>¥{lead.cost}</span>
+                    <Badge variant="outline" className="border-green-300 bg-green-50 text-green-700 text-[10px] px-1.5 py-0">
+                      {lead.sourceType}
+                    </Badge>
+                  </div>
+                  
+                  {/* Layer 2: Sales Info (Middle & Prominent) */}
+                  <div className="space-y-1.5">
+                    {/* Primary: Name + Score Badge */}
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-gray-900">{lead.name}</span>
-                      <Badge className={cn("text-[10px] px-1.5 py-0.5", getIntentionColor(lead.intentionScore))}>
+                      <span className="text-base font-bold text-gray-900">{lead.name}</span>
+                      <Badge className={cn("text-[11px] px-2 py-0.5", getIntentionColor(lead.intentionScore))}>
                         {lead.intentionScore}分
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-1 text-xs text-gray-400">
-                      <Clock className="w-3 h-3" />
-                      <span>{lead.lastContact}</span>
+                    
+                    {/* Secondary: Stats */}
+                    <div className="text-xs text-gray-600">
+                      试驾{lead.testDrives}次 · {lead.keyIssue} · {lead.lastContact}
+                    </div>
+                    
+                    {/* Visual Tags: Car Models */}
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 font-medium">
+                        {lead.targetModel}
+                      </Badge>
+                      <span className="text-xs text-gray-400">vs</span>
+                      <Badge variant="outline" className="border-gray-300 text-gray-600 text-xs px-2 py-0.5">
+                        {lead.competitorModel}
+                      </Badge>
                     </div>
                   </div>
                   
-                  {/* Row 2: Car Models Comparison */}
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <span className="text-gray-700 font-medium">{lead.targetModel}</span>
-                    <span className="text-gray-300">vs</span>
-                    <span className="text-gray-500">{lead.competitorModel}</span>
-                  </div>
+                  {/* Layer 3: Delivery Info (Bottom - Conditional) */}
+                  {lead.status === 'locked' && lead.financeStatus && (
+                    <div className="flex items-center gap-3 text-xs text-gray-600 bg-gray-50 px-2 py-1.5 rounded">
+                      <span className="flex items-center gap-1">
+                        <span className="text-green-600">✓</span>
+                        {lead.financeStatus}
+                      </span>
+                      <span>·</span>
+                      <span className="flex items-center gap-1">
+                        <span>🚚</span>
+                        {lead.deliveryDays}天
+                      </span>
+                      <span>·</span>
+                      <span>{lead.deliverySpecialist}</span>
+                    </div>
+                  )}
                   
-                  {/* Row 3: Key Issue + Source + Test Drives */}
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <MessageSquare className="w-3 h-3" />
-                      {lead.keyIssue}
-                    </span>
-                    <span>·</span>
-                    <span>试驾{lead.testDrives}次</span>
-                    <span>·</span>
-                    <span>{lead.source}</span>
-                    {lead.cost > 0 && (
-                      <>
-                        <span>·</span>
-                        <span className="text-orange-600">¥{lead.cost}</span>
-                      </>
-                    )}
-                  </div>
                 </div>
               </div>
             ))}
