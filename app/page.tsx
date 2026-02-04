@@ -1,5 +1,7 @@
 'use client'
 
+import React from "react"
+
 import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -20,7 +22,13 @@ import {
   ThumbsDown,
   Share2,
   ChevronRight,
-  Flame
+  Flame,
+  Bell,
+  List,
+  TrendingUp,
+  DollarSign,
+  Phone,
+  FileText
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -58,6 +66,54 @@ type Message = {
   // Part D: 快捷操作chips
   actionChips?: string[]
 }
+
+// 通知类型
+type NotificationType = 'critical' | 'insight' | 'success' | 'routine'
+
+type Notification = {
+  id: number
+  type: NotificationType
+  title: string
+  category: 'market' | 'sales' | 'delivery' | 'ai'
+  timestamp: string
+  relatedLeadId?: number
+}
+
+// 通知数据
+const mockNotifications: Notification[] = [
+  {
+    id: 1,
+    type: 'success',
+    title: '[新商机] 新分配高意向线索（张先生·L9），来源：抖音直播。',
+    category: 'market',
+    timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+    relatedLeadId: 3
+  },
+  {
+    id: 2,
+    type: 'insight',
+    title: '[商机洞察] 客户赵先生刚刚查看了 5 次金融计算器，意向分升至 9 分。',
+    category: 'ai',
+    timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+    relatedLeadId: 5
+  },
+  {
+    id: 3,
+    type: 'critical',
+    title: '[交付预警] 客户陈女士贷款审批被退回，原因：收入证明模糊。',
+    category: 'delivery',
+    timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+    relatedLeadId: 4
+  },
+  {
+    id: 4,
+    type: 'critical',
+    title: '[客户激活] S级客户李总回复了您的海报："这款车有现车吗？"',
+    category: 'sales',
+    timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+    relatedLeadId: 1
+  }
+]
 
 // 初始商机数据
 const initialLeads: Lead[] = [
@@ -173,6 +229,9 @@ export default function AgentWorkbench() {
   const [sortBy, setSortBy] = useState<'intention' | 'time' | 'price'>('intention')
   const [pendingTasks, setPendingTasks] = useState(0)
   const [showNotification, setShowNotification] = useState(true)
+  const [notifications] = useState<Notification[]>(mockNotifications)
+  const [currentNotificationIndex, setCurrentNotificationIndex] = useState(1) // Show insight by default
+  const [showNotificationHistory, setShowNotificationHistory] = useState(false) // Declare the variable
 
   // 初始化 - Scenario 2: Market Agent Lead Shortage
   useEffect(() => {
@@ -334,8 +393,162 @@ export default function AgentWorkbench() {
     setInputMessage('')
   }
 
-  // Handle Notification Click - Scenario 4: Delivery Agent
-  const handleNotificationClick = () => {
+  // Handle Notification Bar Click - Show notification details
+  const handleNotificationBarClick = () => {
+    const currentNotif = notifications[currentNotificationIndex]
+    showNotificationDetail(currentNotif)
+  }
+
+  // Handle Notification History Icon Click
+  const handleNotificationHistoryClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setShowNotificationHistory(true)
+  }
+
+  // Show specific notification detail
+  const showNotificationDetail = (notif: Notification) => {
+    switch (notif.id) {
+      case 1: // Market - New Lead
+        showMarketNewLeadCard()
+        break
+      case 2: // AI Insight - Buying Signal
+        showAIInsightCard()
+        break
+      case 3: // Delivery Risk
+        showDeliveryRiskCard()
+        break
+      case 4: // Sales Activation
+        showSalesActivationCard()
+        break
+    }
+  }
+
+  // Show All Notifications History
+  const showAllNotificationHistory = () => {
+    const historyMessage: Message = {
+      role: 'assistant',
+      content: '📋 通知中心',
+      timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      codeBlock: `最近通知：
+
+🔔 [客户激活] S级客户李总回复了您的海报："这款车有现车吗？"
+   时间：${notifications[3].timestamp} | 优先级：高
+
+🚨 [交付预警] 客户陈女士贷款审批被退回，原因：收入证明模糊。
+   时间：${notifications[2].timestamp} | 优先级：紧急
+
+📈 [商机洞察] 客户赵先生刚刚查看了 5 次金融计算器，意向分升至 9 分。
+   时间：${notifications[1].timestamp} | 优先级：中
+
+🆕 [新商机] 新分配高意向线索（张先生·L9），来源：抖音直播。
+   时间：${notifications[0].timestamp} | 优先级：中`,
+      actionChips: ['全部标为已读', '筛选紧急通知', '返回']
+    }
+    setMessages([historyMessage])
+  }
+
+  // Market: New Lead Card
+  const showMarketNewLeadCard = () => {
+    const newLeadMessage: Message = {
+      role: 'assistant',
+      content: '🆕 新商机分配',
+      timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      codeBlock: `您有一条高意向线索（张先生·L9）已分配
+
+来源：抖音直播
+意向分：8 分
+试驾次数：0 次
+关键需求：家庭用车、6座需求
+
+系统建议：
+• 24小时内完成首次联系
+• 推荐话术：强调L9的6座独立空间和家庭出行体验`,
+      actionChips: ['📞 立即拨打', '查看详情']
+    }
+    setMessages([newLeadMessage])
+  }
+
+  // AI Insight: Buying Signal Card
+  const showAIInsightCard = () => {
+    const insightMessage: Message = {
+      role: 'assistant',
+      content: '📈 购买信号捕捉',
+      timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      codeBlock: `监测到赵先生行为活跃，意向分跃升
+
+行为分析：
+• 过去1小时查看金融计算器 5 次
+• 重点关注"36期0息"方案
+• 意向分从 7 分升至 9 分
+
+AI判断：客户对分期方案感兴趣，处于决策临界点
+
+建议行动：
+1. 立即推送"36期0息"详细方案
+2. 附带本月金融优惠截止提醒（制造紧迫感）
+3. 预约周末到店办理（提供绿色通道承诺）`,
+      suggestion: '需要我生成逼单话术吗？',
+      actionChips: ['📝 生成逼单话术', '发送金融方案']
+    }
+    setMessages([insightMessage])
+  }
+
+  // Delivery: Risk Alert Card
+  const showDeliveryRiskCard = () => {
+    const riskMessage: Message = {
+      role: 'assistant',
+      content: '🚨 交付异常处理',
+      timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      codeBlock: `陈女士的贷款有拒批风险
+
+问题详情：
+• 审批状态：被退回
+• 退回原因：收入证明图片模糊，无法识别
+• 风险等级：高（72小时内未处理将影响交付）
+
+所需材料：
+✅ 近3个月工资流水（清晰版）
+✅ 收入证明（加盖公章）
+✅ 身份证复印件
+
+处理建议：
+1. 立即联系客户说明情况
+2. 协助客户准备清晰材料
+3. 联系交付专家加急处理`,
+      actionChips: ['📞 联系交付专家', '发送补件清单']
+    }
+    setMessages([riskMessage])
+  }
+
+  // Sales: Customer Activation Card
+  const showSalesActivationCard = () => {
+    const activationMessage: Message = {
+      role: 'assistant',
+      content: '💬 高意向回复',
+      timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      codeBlock: `沉睡客户李总（意向分9）被海报激活
+
+客户回复："这款车有现车吗？"
+
+客户画像：
+• 上次跟进：14天前
+• 历史意向：MEGA + 纯电长途焦虑
+• 消费能力：高（关注过顶配版本）
+
+推荐回复策略：
+"李总好！MEGA现在有现车，而且是您之前看的琥珀棕顶配版本。刚好有车主实测续航数据（327公里实际跑了300+），周末可以安排长途试驾体验。"
+
+亮点：
+✅ 直接回答"有现车"（解决核心需求）
+✅ 呼应历史顾虑（续航焦虑）
+✅ 提供行动方案（周末试驾）`,
+      actionChips: ['💬 快捷回复：有现车', '查看库存表']
+    }
+    setMessages([activationMessage])
+  }
+
+  // Handle Notification Click - Scenario 4: Delivery Agent (keep original)
+  const handleOldNotificationClick = () => {
     setShowNotification(false)
     const wangLead = leads.find(l => l.id === 2 && l.name === '王先生')
     if (wangLead) {
@@ -487,6 +700,48 @@ export default function AgentWorkbench() {
     return 'bg-gray-400 text-white'
   }
 
+  // 通知样式
+  const getNotificationStyle = (type: NotificationType) => {
+    switch (type) {
+      case 'critical':
+        return {
+          bg: 'bg-red-50',
+          text: 'text-red-700',
+          icon: 'text-red-600',
+          border: 'border-red-200'
+        }
+      case 'insight':
+        return {
+          bg: 'bg-blue-50',
+          text: 'text-blue-700',
+          icon: 'text-blue-600',
+          border: 'border-blue-200'
+        }
+      case 'success':
+        return {
+          bg: 'bg-green-50',
+          text: 'text-green-700',
+          icon: 'text-green-600',
+          border: 'border-green-200'
+        }
+      case 'routine':
+        return {
+          bg: 'bg-gray-50',
+          text: 'text-gray-700',
+          icon: 'text-gray-600',
+          border: 'border-gray-200'
+        }
+    }
+  }
+
+  // 通知图标
+  const getNotificationIcon = (notif: Notification) => {
+    if (notif.type === 'critical') return <AlertTriangle className="w-4 h-4" />
+    if (notif.type === 'insight') return <TrendingUp className="w-4 h-4" />
+    if (notif.type === 'success') return <DollarSign className="w-4 h-4" />
+    return <Bell className="w-4 h-4" />
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-8">
       {/* iPad Container - Fixed 1024x768 */}
@@ -496,7 +751,7 @@ export default function AgentWorkbench() {
         {showNotification && (
           <div 
             className="bg-blue-600 text-white px-6 py-3 flex items-center justify-between cursor-pointer hover:bg-blue-700 transition-colors shrink-0"
-            onClick={handleNotificationClick}
+            onClick={handleNotificationBarClick}
           >
             <div className="flex items-center gap-2">
               <span className="text-lg">🔔</span>
@@ -527,13 +782,44 @@ export default function AgentWorkbench() {
               </Button>
             </div>
             
-            {/* 警告 */}
-            {leads.length < 10 && (
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-orange-600 shrink-0" />
-                <p className="text-xs text-orange-700">
-                  有效线索{leads.length}条，低于安全阈值≥10条
+            {/* Smart Notification Bar */}
+            {notifications.length > 0 && (
+              <div 
+                className={cn(
+                  "rounded-lg px-3 py-2 flex items-center gap-2 cursor-pointer transition-all hover:shadow-md",
+                  getNotificationStyle(notifications[currentNotificationIndex].type).bg,
+                  getNotificationStyle(notifications[currentNotificationIndex].type).border,
+                  "border"
+                )}
+                onClick={handleNotificationBarClick}
+              >
+                {/* Left: Dynamic Icon */}
+                <div className={cn(
+                  "shrink-0",
+                  getNotificationStyle(notifications[currentNotificationIndex].type).icon
+                )}>
+                  {getNotificationIcon(notifications[currentNotificationIndex])}
+                </div>
+                
+                {/* Center: Notification Text (truncated) */}
+                <p className={cn(
+                  "flex-1 text-xs font-medium truncate",
+                  getNotificationStyle(notifications[currentNotificationIndex].type).text
+                )}>
+                  {notifications[currentNotificationIndex].title}
                 </p>
+                
+                {/* Right: History Icon */}
+                <button
+                  className={cn(
+                    "shrink-0 p-1 hover:bg-white/50 rounded transition-colors",
+                    getNotificationStyle(notifications[currentNotificationIndex].type).icon
+                  )}
+                  onClick={handleNotificationHistoryClick}
+                  title="查看所有通知"
+                >
+                  <List className="w-4 h-4" />
+                </button>
               </div>
             )}
             
