@@ -52,6 +52,9 @@ type Lead = {
   financeStatus?: '贷款' | '全款'
   deliveryDays?: number
   deliverySpecialist?: string
+  // Urgency countdown fields
+  actionDeadlineMinutes?: number // Minutes until action required (negative = overdue)
+  urgencyLevel?: 'critical' | 'warning' | 'normal' // For styling
 }
 
 // 消息类型 - Generative UI结构
@@ -115,58 +118,64 @@ const mockNotifications: Notification[] = [
   }
 ]
 
-// 初始商机数据
+// 初始商机数据 - Gig Economy Style Demo
 const initialLeads: Lead[] = [
+  // Item 1: CRITICAL - Overdue
   {
     id: 1,
-    name: '李先生',
-    intentionScore: 9,
-    testDrives: 3,
-    followUpDays: 14,
+    name: '王总',
+    intentionScore: 10,
+    testDrives: 2,
+    followUpDays: 0,
     source: '线下到店',
     cost: 0,
     sourceType: '自主获取',
-    targetModel: '理想MEGA',
-    competitorModel: '腾势D9',
-    keyIssue: '14天未联系',
+    targetModel: '理想L9',
+    competitorModel: '蔚来ET7',
+    keyIssue: '催提车',
     status: 'active',
     riskLevel: 'high',
-    lastContact: '14天前'
+    lastContact: '5分钟前',
+    actionDeadlineMinutes: -5, // Overdue by 5 minutes
+    urgencyLevel: 'critical'
   },
+  // Item 2: WARNING - Urgent
   {
     id: 2,
-    name: '王先生',
-    intentionScore: 10,
-    testDrives: 2,
-    followUpDays: 15,
-    source: '老客户',
+    name: '李女士',
+    intentionScore: 8,
+    testDrives: 3,
+    followUpDays: 0,
+    source: '老带新',
     cost: 0,
     sourceType: '自主获取',
-    targetModel: '理想MEGA',
-    competitorModel: '腾势D9',
-    keyIssue: '等待交付',
-    status: 'locked',
-    riskLevel: 'low',
-    lastContact: '1天前',
-    financeStatus: '贷款',
-    deliveryDays: 3,
-    deliverySpecialist: '刘师傅'
+    targetModel: '理想L6',
+    competitorModel: '问界M7',
+    keyIssue: '等待报价回复',
+    status: 'active',
+    riskLevel: 'medium',
+    lastContact: '40分钟前',
+    actionDeadlineMinutes: 20, // 20 minutes remaining
+    urgencyLevel: 'warning'
   },
+  // Item 3: NORMAL - Routine follow-up
   {
     id: 3,
     name: '张三',
-    intentionScore: 6,
+    intentionScore: 5,
     testDrives: 0,
     followUpDays: 1,
     source: '线上线索',
     cost: 48,
     sourceType: '购买',
     targetModel: '理想L6',
-    competitorModel: '问界M7',
-    keyIssue: '新线索待跟进',
+    competitorModel: '小鹏G6',
+    keyIssue: '新线索',
     status: 'active',
     riskLevel: 'low',
-    lastContact: '1天前'
+    lastContact: '1天前',
+    actionDeadlineMinutes: 1440, // 24 hours (tomorrow)
+    urgencyLevel: 'normal'
   },
   {
     id: 4,
@@ -700,6 +709,32 @@ AI判断：客户对分期方案感兴趣，处于决策临界点
     return 'bg-gray-400 text-white'
   }
 
+  // 格式化倒计时显示
+  const formatCountdown = (minutes: number | undefined) => {
+    if (minutes === undefined) return { text: '待跟进', isOverdue: false }
+    
+    if (minutes < 0) {
+      const overdue = Math.abs(minutes)
+      if (overdue < 60) {
+        return { text: `逾期 ${overdue}分钟`, isOverdue: true }
+      }
+      const hours = Math.floor(overdue / 60)
+      return { text: `逾期 ${hours}小时`, isOverdue: true }
+    }
+    
+    if (minutes < 60) {
+      return { text: `${minutes}分钟内行动`, isOverdue: false }
+    }
+    
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) {
+      return { text: `${hours}小时内`, isOverdue: false }
+    }
+    
+    const days = Math.floor(hours / 24)
+    return { text: `${days}天后`, isOverdue: false }
+  }
+
   // 通知样式
   const getNotificationStyle = (type: NotificationType) => {
     switch (type) {
@@ -865,113 +900,108 @@ AI判断：客户对分期方案感兴趣，处于决策临界点
             </div>
           </div>
 
-          {/* High-Density List - 3-Layer Vertical Stack with Split View */}
+          {/* Mission Control List - Gig Economy Style */}
           <div className="flex-1 overflow-y-auto">
             {sortedLeads.filter(lead => lead.status !== 'completed').map((lead, index) => {
-              const isUrgent = lead.intentionScore >= 9
+              const countdown = formatCountdown(lead.actionDeadlineMinutes)
+              const isCritical = lead.urgencyLevel === 'critical'
+              const isWarning = lead.urgencyLevel === 'warning'
               
               return (
                 <div
                   key={lead.id}
                   className={cn(
-                    "px-4 py-4 cursor-pointer transition-colors border-b border-gray-100 hover:bg-gray-50",
-                    selectedLead.id === lead.id && "border-l-4 border-l-blue-500",
-                    isUrgent && !selectedLead.id === lead.id && "bg-orange-50/40",
-                    lead.riskLevel === 'high' && "bg-red-50/50 border-l-4 border-l-red-400",
-                    lead.status === 'locked' && "bg-green-50/50"
+                    "px-4 py-3 cursor-pointer transition-all border-b border-gray-200 hover:shadow-md relative",
+                    // Gig Economy Backgrounds
+                    isCritical && "bg-red-50 border-l-4 border-l-red-500",
+                    isWarning && "bg-orange-50 border-l-4 border-l-orange-500",
+                    !isCritical && !isWarning && "bg-white hover:bg-gray-50",
+                    selectedLead.id === lead.id && "ring-2 ring-blue-400"
                   )}
                   onClick={() => handleLeadClick(lead)}
                 >
-                  {/* Split Container: Left (3-Layer Stack) | Right (Time + Urgency) */}
-                  <div className="flex flex-row justify-between items-start gap-4">
+                  <div className="space-y-2">
                     
-                    {/* Left Column: 3-Layer Info Stack */}
-                    <div className="flex-1 space-y-2.5">
-                      
-                      {/* Layer 1: Market Info (Top) */}
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span>{lead.source}</span>
-                        <span>·</span>
-                        <span>¥{lead.cost}</span>
-                        <Badge variant="outline" className="border-green-300 bg-green-50 text-green-700 text-[10px] px-1.5 py-0">
-                          {lead.sourceType}
-                        </Badge>
-                        {lead.id === 99 && (
-                          <Badge className="bg-red-500 text-white text-[10px] px-1.5 py-0 animate-pulse">
-                            NEW
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      {/* Layer 2: Sales Info (Middle & Prominent) */}
-                      <div className="space-y-1.5">
-                        {/* Primary: Name + Score Badge + Locked Badge */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-base font-bold text-gray-900">{lead.name}</span>
-                          <Badge className={cn("text-[11px] px-2 py-0.5", getIntentionColor(lead.intentionScore))}>
-                            {lead.intentionScore}分
-                          </Badge>
-                          {lead.status === 'locked' && (
-                            <Badge className="bg-green-600 text-white text-[11px] px-2 py-0.5">
-                              已锁单
-                            </Badge>
-                          )}
+                    {/* Top Row: Score Badge + Name + Hot Icon */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {/* HUGE Score Badge (like delivery fee) */}
+                        <div className={cn(
+                          "flex items-center justify-center w-12 h-12 rounded-full font-bold text-lg shadow-sm",
+                          lead.intentionScore >= 9 ? "bg-red-500 text-white" : 
+                          lead.intentionScore >= 7 ? "bg-orange-400 text-white" : 
+                          "bg-gray-300 text-gray-700"
+                        )}>
+                          {lead.intentionScore}
                         </div>
                         
-                        {/* Secondary: Stats */}
-                        <div className="text-xs text-gray-600">
-                          试驾{lead.testDrives}次 · {lead.keyIssue}
-                        </div>
-                        
-                        {/* Visual Tags: Car Models + Special Tags for 李先生 */}
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          <Badge className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 font-medium">
-                            {lead.targetModel}
-                          </Badge>
-                          <span className="text-xs text-gray-400">vs</span>
-                          <Badge variant="outline" className="border-gray-300 text-gray-600 text-xs px-2 py-0.5">
-                            {lead.competitorModel}
-                          </Badge>
-                          {lead.id === 1 && lead.name === '李先生' && (
-                            <>
-                              <Badge className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 font-medium">
-                                MEGA意向
-                              </Badge>
-                              <Badge className="bg-yellow-100 text-yellow-700 text-xs px-2 py-0.5 font-medium">
-                                锁单犹豫期
-                              </Badge>
-                            </>
-                          )}
+                        {/* Name + Model */}
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-base font-bold text-gray-900">{lead.name}</span>
+                            <span className="text-sm text-gray-500">({lead.targetModel})</span>
+                          </div>
+                          <div className="text-xs text-gray-500 mt-0.5">{lead.keyIssue}</div>
                         </div>
                       </div>
                       
-                      {/* Layer 3: Delivery Info (Bottom - Conditional) */}
-                      {lead.status === 'locked' && lead.financeStatus && (
-                        <div className="flex items-center gap-3 text-xs text-gray-600 bg-gray-50 px-2 py-1.5 rounded">
-                          <span className="flex items-center gap-1">
-                            <span className="text-green-600">✓</span>
-                            {lead.financeStatus}
-                          </span>
-                          <span>·</span>
-                          <span className="flex items-center gap-1">
-                            <span>🚚</span>
-                            {lead.deliveryDays}天
-                          </span>
-                          <span>·</span>
-                          <span>{lead.deliverySpecialist}</span>
+                      {/* Hot Icon for high value */}
+                      {lead.intentionScore >= 9 && (
+                        <div className="flex items-center gap-1">
+                          <Flame className="w-5 h-5 text-red-500" />
+                          <span className="text-xs font-bold text-red-600">HOT</span>
                         </div>
                       )}
-                      
                     </div>
                     
-                    {/* Right Column: Time + Urgency Indicator */}
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      <div className="text-xs text-gray-400">
-                        {lead.lastContact}
-                      </div>
-                      {isUrgent && (
-                        <Flame className="w-5 h-5 text-orange-500" />
+                    {/* Countdown Timer - BOLD and LARGE */}
+                    <div className="flex items-center gap-2">
+                      <Clock className={cn(
+                        "w-4 h-4",
+                        countdown.isOverdue ? "text-red-600" : "text-gray-600"
+                      )} />
+                      <span className={cn(
+                        "text-sm font-bold",
+                        countdown.isOverdue ? "text-red-600" : "text-gray-700"
+                      )}>
+                        {countdown.text}
+                      </span>
+                      {countdown.isOverdue && (
+                        <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full animate-pulse">
+                          逾期
+                        </span>
                       )}
+                    </div>
+                    
+                    {/* Action Buttons - Footer */}
+                    <div className="flex items-center gap-2 pt-1">
+                      <Button
+                        size="sm"
+                        className={cn(
+                          "flex-1 h-8 text-xs font-bold shadow-sm",
+                          isCritical ? "bg-red-600 hover:bg-red-700" :
+                          isWarning ? "bg-orange-500 hover:bg-orange-600" :
+                          "bg-blue-600 hover:bg-blue-700"
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          console.log(`[v0] Calling ${lead.name}`)
+                        }}
+                      >
+                        <Phone className="w-3 h-3 mr-1" />
+                        {isCritical ? '立即致电' : '联系客户'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs border-gray-300 bg-transparent"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleLeadClick(lead)
+                        }}
+                      >
+                        详情
+                      </Button>
                     </div>
                     
                   </div>
