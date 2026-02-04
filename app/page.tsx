@@ -172,6 +172,7 @@ export default function AgentWorkbench() {
   const [inputMessage, setInputMessage] = useState('')
   const [sortBy, setSortBy] = useState<'intention' | 'time' | 'price'>('intention')
   const [pendingTasks, setPendingTasks] = useState(0)
+  const [showNotification, setShowNotification] = useState(true)
 
   // 初始化 - Scenario 2: Market Agent Lead Shortage
   useEffect(() => {
@@ -333,9 +334,70 @@ export default function AgentWorkbench() {
     setInputMessage('')
   }
 
-  // 切换线索 - Scenario 3: Sales Agent (Conversion)
+  // Handle Notification Click - Scenario 4: Delivery Agent
+  const handleNotificationClick = () => {
+    setShowNotification(false)
+    const wangLead = leads.find(l => l.id === 2 && l.name === '王先生')
+    if (wangLead) {
+      setSelectedLead(wangLead)
+      showDeliverySync()
+    }
+  }
+
+  // Show Delivery Sync Card
+  const showDeliverySync = () => {
+    const deliveryHeader: Message = {
+      role: 'assistant',
+      content: '🚚 交付协同 (Delivery Agent)',
+      timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      codeBlock: `王先生已于 26年2月3日 锁单
+
+匹配交付专家：@刘交付
+
+系统自动完成：
+✅ 创建专属交付群
+✅ 同步客户权益
+✅ 生成欢迎语`,
+      suggestion: '请确认并发送欢迎消息给王先生',
+      actionChips: []
+    }
+
+    const welcomeMessage: Message = {
+      role: 'assistant',
+      content: '欢迎语草稿（可编辑）',
+      timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      codeBlock: `王先生您好，欢迎加入理想大家庭！🎉
+
+我是您的专属交付顾问 @刘交付，很高兴为您服务。
+
+您订购的车型信息：
+• 车型：理想 MEGA
+• 付款方式：贷款
+• 预计交付：3天内
+
+接下来我们将为您提供：
+✅ 专属交付群全程跟踪
+✅ 车辆配置最终确认
+✅ 金融方案办理协助
+✅ 交付流程一站式服务
+
+有任何问题随时联系我，期待与您见面！`,
+      actionChips: ['发送', '编辑内容', '稍后处理']
+    }
+
+    setMessages([deliveryHeader, welcomeMessage])
+  }
+
+  // 切换线索 - Scenario 3: Sales Agent (Conversion) + Scenario 4 Handler
   const handleLeadClick = (lead: Lead) => {
     setSelectedLead(lead)
+    
+    // Special handling for 王先生 - Scenario 4: Delivery Sync
+    if (lead.id === 2 && lead.name === '王先生' && lead.status === 'locked') {
+      setShowNotification(false)
+      showDeliverySync()
+      return
+    }
     
     // Special handling for 李先生 - Scenario 3
     if (lead.id === 1 && lead.name === '李先生') {
@@ -428,7 +490,24 @@ export default function AgentWorkbench() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-8">
       {/* iPad Container - Fixed 1024x768 */}
-      <div className="w-[1024px] h-[768px] bg-white rounded-lg shadow-2xl border border-gray-300 overflow-hidden flex">
+      <div className="w-[1024px] h-[768px] bg-white rounded-lg shadow-2xl border border-gray-300 overflow-hidden flex flex-col">
+        
+        {/* Notification Bar - Scenario 4 */}
+        {showNotification && (
+          <div 
+            className="bg-blue-600 text-white px-6 py-3 flex items-center justify-between cursor-pointer hover:bg-blue-700 transition-colors shrink-0"
+            onClick={handleNotificationClick}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🔔</span>
+              <span className="text-sm font-medium">你有一个锁单客户待与交付交接</span>
+            </div>
+            <ChevronRight className="w-5 h-5" />
+          </div>
+        )}
+        
+        {/* Main Content Container */}
+        <div className="flex-1 flex overflow-hidden">
         
         {/* Left Panel - List View (35%) */}
         <div className="w-[358px] border-r border-gray-200 flex flex-col bg-white">
@@ -512,7 +591,8 @@ export default function AgentWorkbench() {
                     "px-4 py-4 cursor-pointer transition-colors border-b border-gray-100 hover:bg-gray-50",
                     selectedLead.id === lead.id && "border-l-4 border-l-blue-500",
                     isUrgent && !selectedLead.id === lead.id && "bg-orange-50/40",
-                    lead.riskLevel === 'high' && "bg-red-50/50 border-l-4 border-l-red-400"
+                    lead.riskLevel === 'high' && "bg-red-50/50 border-l-4 border-l-red-400",
+                    lead.status === 'locked' && "bg-green-50/50"
                   )}
                   onClick={() => handleLeadClick(lead)}
                 >
@@ -539,12 +619,17 @@ export default function AgentWorkbench() {
                       
                       {/* Layer 2: Sales Info (Middle & Prominent) */}
                       <div className="space-y-1.5">
-                        {/* Primary: Name + Score Badge */}
+                        {/* Primary: Name + Score Badge + Locked Badge */}
                         <div className="flex items-center gap-2">
                           <span className="text-base font-bold text-gray-900">{lead.name}</span>
                           <Badge className={cn("text-[11px] px-2 py-0.5", getIntentionColor(lead.intentionScore))}>
                             {lead.intentionScore}分
                           </Badge>
+                          {lead.status === 'locked' && (
+                            <Badge className="bg-green-600 text-white text-[11px] px-2 py-0.5">
+                              已锁单
+                            </Badge>
+                          )}
                         </div>
                         
                         {/* Secondary: Stats */}
@@ -793,6 +878,7 @@ export default function AgentWorkbench() {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>
