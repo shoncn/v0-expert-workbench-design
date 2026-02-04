@@ -66,16 +66,16 @@ const initialLeads: Lead[] = [
     name: '李先生',
     intentionScore: 9,
     testDrives: 3,
-    followUpDays: 3,
+    followUpDays: 14,
     source: '线下到店',
     cost: 0,
     sourceType: '自主获取',
-    targetModel: '理想L9',
-    competitorModel: '问界M9',
-    keyIssue: '3天未跟进',
+    targetModel: '理想MEGA',
+    competitorModel: '腾势D9',
+    keyIssue: '14天未联系',
     status: 'active',
-    riskLevel: 'low',
-    lastContact: '3天前'
+    riskLevel: 'high',
+    lastContact: '14天前'
   },
   {
     id: 2,
@@ -333,10 +333,56 @@ export default function AgentWorkbench() {
     setInputMessage('')
   }
 
-  // 切换线索
+  // 切换线索 - Scenario 3: Sales Agent (Conversion)
   const handleLeadClick = (lead: Lead) => {
     setSelectedLead(lead)
     
+    // Special handling for 李先生 - Scenario 3
+    if (lead.id === 1 && lead.name === '李先生') {
+      const riskWarning: Message = {
+        role: 'assistant',
+        content: '⚠️ 风险预警：流失风险',
+        timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+        codeBlock: `意向分 90，已 14 天未联系。监测到客户在 App 搜索'纯电长途规划'，推测存在'长途续航焦虑'。
+
+【生成转化话术】
+
+李先生早！
+
+刚在微博看到 MEGA 车主实测 327 公里长途（满电、空调、高速），实际续航达标率 92%，比官方 NEDC 还准。发给您参考：
+
+[附件：微博链接 - 车主亲测 MEGA 续航]
+
+咱们店里正好有现车，要不周末来实际体验下长途模式？我帮您规划个真实场景测试。`,
+        suggestion: '是否通过企微发送？',
+        actionChips: ['需要', '调整话术', '查看续航数据']
+      }
+      
+      setMessages([riskWarning])
+      
+      // Auto-simulate user response after 2 seconds
+      setTimeout(() => {
+        const userResponse: Message = {
+          role: 'user',
+          content: '需要',
+          timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+        }
+        
+        const confirmFeedback: Message = {
+          role: 'assistant',
+          content: '✅ 已唤起企业微信并填入话术',
+          timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+          suggestion: '建议 30 分钟后跟进客户回复情况',
+          actionChips: []
+        }
+        
+        setMessages(prev => [...prev, userResponse, confirmFeedback])
+      }, 2000)
+      
+      return
+    }
+    
+    // Default handling for other leads
     let contextMessage: Message = {
       role: 'assistant',
       content: `已切换到${lead.name}（意向分${lead.intentionScore}/10，${lead.keyIssue}）。`,
@@ -344,7 +390,7 @@ export default function AgentWorkbench() {
       actionChips: ['生成跟进方案', '查看详情', '设置提醒']
     }
     
-    if (lead.riskLevel === 'high') {
+    if (lead.riskLevel === 'high' && lead.id !== 1) {
       contextMessage = {
         role: 'assistant',
         content: `⚠️ ${lead.name}为高风险客户，${lead.lastContact}未联系，建议立即跟进：`,
@@ -506,8 +552,8 @@ export default function AgentWorkbench() {
                           试驾{lead.testDrives}次 · {lead.keyIssue}
                         </div>
                         
-                        {/* Visual Tags: Car Models */}
-                        <div className="flex items-center gap-2 mt-1">
+                        {/* Visual Tags: Car Models + Special Tags for 李先生 */}
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <Badge className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 font-medium">
                             {lead.targetModel}
                           </Badge>
@@ -515,6 +561,16 @@ export default function AgentWorkbench() {
                           <Badge variant="outline" className="border-gray-300 text-gray-600 text-xs px-2 py-0.5">
                             {lead.competitorModel}
                           </Badge>
+                          {lead.id === 1 && lead.name === '李先生' && (
+                            <>
+                              <Badge className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 font-medium">
+                                MEGA意向
+                              </Badge>
+                              <Badge className="bg-yellow-100 text-yellow-700 text-xs px-2 py-0.5 font-medium">
+                                锁单犹豫期
+                              </Badge>
+                            </>
+                          )}
                         </div>
                       </div>
                       
