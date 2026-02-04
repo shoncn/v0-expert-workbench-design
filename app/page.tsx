@@ -63,51 +63,54 @@ type Message = {
 const initialLeads: Lead[] = [
   {
     id: 1,
-    name: '王总',
-    intentionScore: 10,
-    testDrives: 2,
-    followUpDays: 8,
-    source: '线下到店',
-    cost: 0,
-    sourceType: '自主获取',
-    targetModel: '理想L7',
-    competitorModel: '蔚来ES6',
-    keyIssue: '催促提车',
-    status: 'active',
-    riskLevel: 'low',
-    lastContact: '30分钟前'
-  },
-  {
-    id: 2,
-    name: '李女士',
+    name: '李先生',
     intentionScore: 9,
     testDrives: 3,
-    followUpDays: 12,
-    source: '老带新',
-    cost: 0,
-    sourceType: '自主获取',
-    targetModel: '理想L6',
-    competitorModel: '问界M7',
-    keyIssue: '纠结内饰颜色',
-    status: 'active',
-    riskLevel: 'low',
-    lastContact: '1小时前'
-  },
-  {
-    id: 3,
-    name: '张先生',
-    intentionScore: 7,
-    testDrives: 1,
     followUpDays: 3,
     source: '线下到店',
     cost: 0,
     sourceType: '自主获取',
-    targetModel: '理想L6',
-    competitorModel: '问界M5',
-    keyIssue: '对比竞品续航',
+    targetModel: '理想L9',
+    competitorModel: '问界M9',
+    keyIssue: '3天未跟进',
     status: 'active',
     riskLevel: 'low',
     lastContact: '3天前'
+  },
+  {
+    id: 2,
+    name: '王先生',
+    intentionScore: 10,
+    testDrives: 2,
+    followUpDays: 15,
+    source: '老客户',
+    cost: 0,
+    sourceType: '自主获取',
+    targetModel: '理想MEGA',
+    competitorModel: '腾势D9',
+    keyIssue: '等待交付',
+    status: 'locked',
+    riskLevel: 'low',
+    lastContact: '1天前',
+    financeStatus: '贷款',
+    deliveryDays: 3,
+    deliverySpecialist: '刘师傅'
+  },
+  {
+    id: 3,
+    name: '张三',
+    intentionScore: 6,
+    testDrives: 0,
+    followUpDays: 1,
+    source: '线上线索',
+    cost: 48,
+    sourceType: '购买',
+    targetModel: '理想L6',
+    competitorModel: '问界M7',
+    keyIssue: '新线索待跟进',
+    status: 'active',
+    riskLevel: 'low',
+    lastContact: '1天前'
   },
   {
     id: 4,
@@ -170,25 +173,44 @@ export default function AgentWorkbench() {
   const [sortBy, setSortBy] = useState<'intention' | 'time' | 'price'>('intention')
   const [pendingTasks, setPendingTasks] = useState(0)
 
-  // 初始化
+  // 初始化 - Daily Kick-off Card + User Response
   useEffect(() => {
-    const initialMessage: Message = {
+    const kickoffMessage: Message = {
       role: 'assistant',
-      content: '检测到客户李女士为高价值目标（意向分9/10，试驾3次），当前纠结内饰颜色选择，建议生成个性化跟进话术：',
+      content: '👋 早上好，小张！又是元气满满的一天。',
       timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-      codeBlock: `李女士您好！
-
-关于内饰颜色，我特地为您整理了几个推荐方案：
-
-【云境灰】- 商务专业，耐脏易打理，95%客户首选
-【晨曦白】- 简约时尚，提升车内亮度，适合女性车主  
-【琥珀棕】- 豪华质感，但需定期保养
-
-根据您的使用场景（商务+家用），建议选择云境灰。本周末有现车到店，可以实际体验对比，我帮您预约？`,
-      suggestion: '需要我调整话术风格，让语气更温和亲切吗？',
-      actionChips: ['直接发送到企微', '调整为激进策略', '查看竞品对比']
+      suggestion: '下一步建议：需要我为您生成获客方案吗？',
+      actionChips: []
     }
-    setMessages([initialMessage])
+    
+    const userResponse: Message = {
+      role: 'user',
+      content: '需要',
+      timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+    }
+    
+    const strategyMessage: Message = {
+      role: 'assistant',
+      content: '正在为您生成获客方案...',
+      timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      codeBlock: `【获客方案 - 理想L9目标客群】
+
+渠道策略：
+• 线上：抖音/小红书投放（预算¥5000，预计15条线索）
+• 线下：商圈试驾活动（周末，目标20组家庭）
+• 转介绍：老客户推荐奖励（每成交1台奖励¥2000）
+
+话术模板：
+"理想L9，家庭出行的最佳选择。6座布局，二排独立座椅，让每次旅行都舒适自在。本月购车还可享受..."
+
+执行计划：
+1. 本周三前完成素材制作
+2. 周四启动线上投放
+3. 周六组织线下活动`,
+      actionChips: ['开始执行', '调整方案', '查看预算']
+    }
+    
+    setMessages([kickoffMessage, userResponse, strategyMessage])
   }, [])
 
   // 处理用户输入
@@ -327,13 +349,13 @@ export default function AgentWorkbench() {
       {/* iPad Container - Fixed 1024x768 */}
       <div className="w-[1024px] h-[768px] bg-white rounded-lg shadow-2xl border border-gray-300 overflow-hidden flex">
         
-        {/* Left Panel - List View (40%) */}
-        <div className="w-[410px] border-r border-gray-200 flex flex-col bg-white">
+        {/* Left Panel - List View (35%) */}
+        <div className="w-[358px] border-r border-gray-200 flex flex-col bg-white">
           {/* Header */}
           <div className="bg-white border-b border-gray-200 p-4 space-y-3 shrink-0">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-lg font-semibold text-gray-900">Sales Agent</h1>
+                <h1 className="text-lg font-semibold text-gray-900">资源运营</h1>
                 <p className="text-xs text-gray-500 mt-0.5">商机管理</p>
               </div>
               <Button 
@@ -552,30 +574,46 @@ export default function AgentWorkbench() {
                       </div>
                     )}
                     
-                    {/* AI Message - Natural Article Style */}
+                    {/* AI Message - Styled Card Layout */}
                     {message.role === 'assistant' && (
                       <div className="space-y-4">
-                        {/* Part A: Insight & Solution (Content Layer) */}
-                        <div className="prose prose-sm max-w-none">
-                          <p className="text-[15px] leading-relaxed text-gray-700">
-                            {message.content}
-                          </p>
-                          
-                          {/* Code Block for Script/Content - Plain text style */}
-                          {message.codeBlock && (
-                            <div className="mt-4 pl-4 border-l-2 border-gray-200 text-[14px] leading-relaxed text-gray-800 whitespace-pre-wrap">
-                              {message.codeBlock}
-                            </div>
-                          )}
+                        {/* Greeting */}
+                        <div className="text-lg text-gray-800">
+                          {message.content}
                         </div>
                         
-                        {/* Part B: Proactive Text Trigger - Plain text style */}
-                        {message.suggestion && (
-                          <div className="flex items-start gap-2 text-gray-600 italic">
-                            <Sparkles className="w-4 h-4 text-blue-400 shrink-0 mt-1" />
-                            <p className="text-[14px] leading-relaxed">
-                              {message.suggestion}
+                        {/* Highlight Section (Gold/Yellow Tint) */}
+                        {index === 0 && (
+                          <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
+                            <p className="text-sm text-gray-800">
+                              🌟 高光时刻：昨天拿下一台 L9 订单，本月目标达成率 80%，领跑全店！
                             </p>
+                          </div>
+                        )}
+                        
+                        {/* Focus Section (Blue Tint) */}
+                        {index === 0 && (
+                          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg space-y-2">
+                            <p className="text-sm text-gray-800">
+                              🎯 今日聚焦：今日目标线索 5 条，当前已完成 2 条
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              月目标缺口 2 台，资源库存不足（当前 {leads.length} 条线索 {'<'} 安全阈值 10 条）
+                            </p>
+                          </div>
+                        )}
+                        
+                        {/* Code Block for Script/Content */}
+                        {message.codeBlock && (
+                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-[14px] leading-relaxed text-gray-800 whitespace-pre-wrap">
+                            {message.codeBlock}
+                          </div>
+                        )}
+                        
+                        {/* Action Trigger Text */}
+                        {message.suggestion && (
+                          <div className="text-[15px] text-gray-700 italic">
+                            {message.suggestion}
                           </div>
                         )}
                         
